@@ -1,0 +1,38 @@
+clear
+clc
+n = input('dimension of covariance matrix\n');
+noise_var = input('variance of noise\n');
+density = input('fraction of nonzero entries in PCORR\n');
+Num = input('number of data points in generated data\n');
+
+[ind_nz,A,y] = gen_sparseAR(n,0,noise_var,density,Num);
+[pcorr,pval] = partialcorr(y');
+pcorr(pval>0.05) = 0;
+subplot(3,1,2);
+spy(pcorr);title('sparsity of pcorr from hypothesisTest')
+S = cov(y');
+
+eigen = eig(S);
+
+biclist = zeros(100,1);
+lambdalist = (0.01:0.01:1)';
+
+%%%%tuning lambda USING BIC%%%
+for i = 1:100
+    %lambda = i/100;
+    See=sparseInverseCovariance(S, lambdalist(i), 0);
+    biclist(i) = Num*(-log(det(See)) + trace(S*See))+ (log(Num))*sum(sum(See~=0));%%% See = estimated Theta
+    %there are something wrong with this part
+end
+
+[~,bestlambdaindex] = min(biclist);
+Theta=sparseInverseCovariance(S, lambdalist(bestlambdaindex), 0);
+subplot(3,1,3) ;
+spy(Theta);title('sparsity of pcorr from glasso')
+
+
+% 
+% pcorr = diag(sqrt(1./diag(Theta)))*Theta*diag(sqrt(1./diag(Theta)));
+% subplot(3,1,3)
+% imagesc(pcorr)
+% colormap('gray')
