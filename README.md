@@ -1,3 +1,3 @@
 # summer-project
 
-This will need SLEP toolbox. I can be download here http://www.yelab.net/software/SLEP/
+This will need SLEP toolbox. It is available here http://www.yelab.net/software/SLEP/
