@@ -1,0 +1,57 @@
+clear
+clc
+%%%% LOAD DATA %%%%
+disp('Press enter to choose file directory')
+pause;
+folder_name = uigetdir;
+disp('Press enter to choose file')
+pause;
+file = uigetfile(folder_name);
+name = strcat(folder_name,'\',file);
+timeseries = importdata(name);
+%%%%%%%%%%%%%%%%%%%
+
+%%%%INPUT REGULARIZATION PARAMETER RANGE%%%%
+disp('press ENTER to use default value')
+ini = input('Input first lambda :');
+fin = input('Input final lambda :');
+step = input('Input step width :');
+if isempty(ini)
+    ini = 0.1;
+end
+if isempty(fin)
+    fin = 2;
+end
+if isempty(step)
+    step = 0.1;
+end
+range = (fin-ini);
+iter = range/step +1;
+mat = timeseries.data;
+%mat = mat(:,1:20);
+temp = size(mat);
+datapoints = temp(1);
+dimS = temp(2);
+S = cov(mat); %sample covariance matrix
+biclist = zeros(int64(iter),1);
+lambdalist = (ini:step:fin)';
+
+
+
+%%%%
+%%%%tuning lambda USING BIC%%%
+for i = 1:int64(iter)
+    See=sparseInverseCovariance(S, lambdalist(i), 0);
+    biclist(i) = datapoints*(-log(det(See)) + trace(S*See))+ (log(datapoints))*sum(sum(See~=0));%%% See = estimated Theta
+end
+[~,bestlambdaindex] = min(biclist);
+Theta=sparseInverseCovariance(S, lambdalist(bestlambdaindex), 0);
+%%%%
+%subplot(1,1,1);
+%spy(Theta);title('inverse covariance using glasso')
+pcorr = diag(sqrt(1./diag(Theta)))*Theta*diag(sqrt(1./diag(Theta))); %normalise inverse covariance matrix so it will be easy to see sparsity
+imagesc(pcorr)
+colormap('gray')
+
+disp('density :')
+disp((sum(sum(Theta~=0)))/(dimS^2))
